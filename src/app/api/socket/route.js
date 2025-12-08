@@ -19,7 +19,7 @@ export const GET = async (req, res) => {
       if (!token) return next(new Error('No token'));
 
       try {
-        const { verifyAccessToken } = require('@/lib/jwt');
+        const { verifyAccessToken } = require('../../../../database/jwt');
         const payload = verifyAccessToken(token);
         socket.userId = payload.userId;
         next();

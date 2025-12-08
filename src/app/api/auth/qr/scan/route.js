@@ -1,9 +1,9 @@
 // src/app/api/auth/qr/claim/route.js
 import { NextResponse } from 'next/server';
-import redis from '@/lib/redis';
 import { v4 as uuidv4 } from 'uuid';
 // Assuming the following are correctly resolved from your project structure
 import { signAccessToken, signRefreshToken } from '../../../../../../database/jwt'; 
+import { redis } from '../../../../../../database/redis';
 // import clientPromise from '../../../../../../database/mongodb'; // Not strictly needed here
 
 // --- PLACEHOLDER FUNCTIONS ---
