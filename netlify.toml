@@ -1,8 +1,11 @@
+[build]
+  publish = ".next" 
+  command = "next build"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-[build]
-  publish = ".next"
-  command = "next build"
+[functions]
+  node_bundler = "esbuild"
