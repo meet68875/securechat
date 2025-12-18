@@ -11,6 +11,7 @@ import { persistor } from '../../store';
 export default function ClientProvider({ children }) {
   const toastRef = useRef(null);
 
+
   return (
     <Provider store={store}>
       <PersistGate

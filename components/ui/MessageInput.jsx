@@ -1,4 +1,3 @@
-// src/components/MessageInput.jsx
 'use client';
 
 import { useState } from 'react';
@@ -10,31 +9,38 @@ export default function MessageInput({ onSend }) {
 
   const send = () => {
     if (text.trim()) {
-      console.log("text", text);
       onSend(text);
       setText('');
     }
   };
 
   return (
-    <div className="border-t border-surface-200 bg-surface-0 p-4">
+    <div className="border-t border-slate-100 bg-white p-4 lg:px-8">
       <div className="flex gap-3 max-w-5xl mx-auto items-end">
-        <InputTextarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message... (Shift + Enter for new line)"
-          autoResize
-          rows={1}
-          className="flex-1 p-inputtext-lg !shadow-none ring-1 ring-surface-300 focus:ring-primary-500 transition-shadow duration-200"
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())}
-        />
+        <div className="flex-1 relative">
+          <InputTextarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Type a message..."
+            autoResize
+            rows={1}
+            className="w-full py-3 px-4 pr-12 text-[15px] border border-slate-200 !rounded-2xl !shadow-none focus:border-indigo-500 ring-0 transition-all duration-200 ease-in-out bg-slate-50 focus:bg-white"
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())}
+          />
+        </div>
+
+        {/* Send Button matched to "ME" Bubble colors */}
         <Button
           icon="pi pi-send"
-          tooltip="Send message (Enter)"
           onClick={send}
           disabled={!text.trim()}
-          // Use p-button-primary for a strong visual send cue
-          className="p-button-rounded p-button-primary p-button-lg shadow-md" 
+          className="p-button-rounded shadow-lg transform transition-transform active:scale-95"
+          style={{ 
+            backgroundColor: '#4F46E5', 
+            border: 'none', 
+            width: '48px', 
+            height: '48px' 
+          }}
         />
       </div>
     </div>

@@ -88,28 +88,33 @@ export default function ChatPage() {
 
   return (
     <AuthGuard>
-    <div className="flex flex-col h-screen bg-surface-100">
-      <Navbar />
+      {/* Main Container: Full screen height, vertical stack */}
+      <div className="flex flex-col h-screen bg-slate-50">
+        {/* Navbar sits at the top */}
+        <Navbar />
 
-      <div className="flex-1 flex justify-center w-full p-4">
-        <Card className="flex-1 max-w-6xl w-full rounded-xl shadow-2xl overflow-hidden flex flex-col">
-          {messages.length === 0 ? (
-            <EmptyChatState />
-          ) : (
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              <div className="space-y-4">
-                {messages.map((msg) => (
-                  <ChatBubble key={msg.id} message={msg} />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+        {/* Chat Area fills the remaining space */}
+        <main className="flex-1 flex flex-col justify-center items-center w-full p-2 md:p-4 overflow-hidden">
+          <Card className="flex-1 max-w-6xl w-full rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col bg-white">
+            {/* Scrollable Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/50">
+              {messages.length === 0 ? (
+                <EmptyChatState />
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((msg) => (
+                    <ChatBubble key={msg.id} message={msg} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
-          )}
 
-          <MessageInput onSend={handleSend} />
-        </Card>
+            {/* Input anchored at the bottom of the Card */}
+            <MessageInput onSend={handleSend} />
+          </Card>
+        </main>
       </div>
-    </div>
     </AuthGuard>
   );
 }
