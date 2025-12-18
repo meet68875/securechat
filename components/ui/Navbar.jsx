@@ -22,14 +22,11 @@ export default function Navbar() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // 1. Call the backend to clear cookies
       await apiClient('/api/auth/logout', { method: 'POST' });
     } catch (err) {
       console.error("Logout failed:", err);
     } finally {
-      // 2. Clear local Redux state regardless of server success
       dispatch(logout());
-      // 3. Redirect to login
       router.push('/login');
       setIsLoggingOut(false);
     }
