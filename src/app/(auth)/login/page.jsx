@@ -16,32 +16,38 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    try {
+  try {
     const res = await apiClient('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-        
-  });
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
 
+    if (!res.ok) {
+      // Check for HTTP status code errors
       const data = await res.json();
-
-      if (res.ok) {
-        dispatch(loginSuccess({ user: data.user, token: data.token }));
-        router.push('/chat');
-      } else {
-        setError(data.error || 'Invalid credentials');
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
+      setError(data.error || 'Invalid credentials'); // Use the error message from the server
+      return; // Exit if the response isn't OK
     }
-  };
+
+    const data = await res.json();
+    if (data.success) {
+      dispatch(loginSuccess({ user: data.user, token: data.token }));
+      router.push('/chat');
+    } else {
+      setError(data.error || 'Invalid credentials');
+    }
+  } catch (err) {
+    console.error(err);
+    setError('Network error. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
