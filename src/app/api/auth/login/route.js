@@ -28,6 +28,7 @@ export async function POST(request) {
     const response = NextResponse.json({
       success: true,
       user: { id: user._id.toString(), email: user.email },
+      token: accessToken, // Send the access token
     });
 
     // Set cookies for tokens
