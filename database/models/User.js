@@ -1,6 +1,24 @@
-// src/models/User.js (MODIFIED for E2EE)
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+// src/database/models/User.js
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
+const PreKeySchema = new mongoose.Schema(
+  {
+    keyId: {
+      type: Number,
+      required: true,
+    },
+    publicKey: {
+      type: String,
+      required: true,
+    },
+    usedAt: {
+      type: Date,
+      default: null, // helps prevent reuse
+    },
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema(
   {
@@ -10,37 +28,42 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
     },
+
     password: {
       type: String,
       required: true,
+      select: false, // 🔐 never return by default
     },
-    // 🎯 NEW: Identity Public Key for E2EE
-    // Stored as a string (JSON stringified JWK or Base64 of the key)
-    identityPublicKey: {
-      type: String,
-      required: false, // Make false if it's updated after registration
-      default: null,
-    },
-    // 🎯 NEW: Array of One-Time Pre-Keys
-    // The server needs to store the public halves and delete them after use.
-    preKeys: [
-      {
-        keyId: { type: Number, required: true },
-        publicKey: { type: String, required: true }, // The public key string
-        // You may also want a timestamp to manage expiration
-      },
-    ],
-    // --- Existing fields ---
+
     username: {
       type: String,
       trim: true,
+      unique: true,
+      sparse: true,
     },
+
     phone: {
       type: String,
       trim: true,
     },
-    createdAt: {
+
+    // 🔐 E2EE — identity key (public only)
+    identityPublicKey: {
+      type: String,
+      default: null,
+    },
+
+    // 🔐 E2EE — one-time prekeys
+    preKeys: [PreKeySchema],
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    lastSeen: {
       type: Date,
       default: Date.now,
     },
@@ -50,19 +73,34 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving (Existing logic remains)
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+//
+// 🔐 PASSWORD HASHING
+//
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-// Compare password method (Existing logic remains)
-UserSchema.methods.comparePassword = async function (candidatePassword) {
+//
+// 🔐 PASSWORD COMPARISON
+//
+UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
-module.exports = User;
+//
+// 🔐 REMOVE SENSITIVE FIELDS FROM JSON
+//
+UserSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  delete obj.__v;
+  return obj;
+};
+
+const User =
+  mongoose.models.User || mongoose.model("User", UserSchema);
+
+export default User;

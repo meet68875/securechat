@@ -1,55 +1,38 @@
-// src/app/api/middleware/auth.js
-import { NextResponse } from 'next/server';
-import { verifyAccessToken } from '../../../database/jwt';
-import clientPromise from '../../../database/mongodb';
-import { setCookie } from '../../../database/cookies';
-import { ObjectId } from 'mongodb';
+// src/lib/auth.js
 
-export async function authMiddleware(request) {
-  try {
-    const token = request.cookies.get('access_token')?.value;
+import { verifyAccessToken } from "../../../database/jwt";
+import User from "../../../database/models/User";
+import connectDB from "../../../database/mongodb";
 
-    if (!token) {
-      return logoutResponse();
-    }
+/**
+ * Validate user from request cookies
+ * @throws Error("UNAUTHORIZED")
+ */
+export async function requireAuth(req) {
+  const token = req.cookies.get("access_token")?.value;
 
-    const payload = verifyAccessToken(token);
-
-    const client = await clientPromise;
-    const db = client.db();
-    const user = await db.collection('users').findOne({ _id: new ObjectId(payload.userId) });
-
-    if (!user) {
-      // User not found → force logout
-      return logoutResponse();
-    }
-
-    // ✅ Auth success
-    return {
-      ok: true,
-      user,
-      userId: payload.userId,
-      deviceId: payload.deviceId,
-    };
-  } catch (err) {
-    console.error('AUTH ERROR', err);
-    return logoutResponse();
+  if (!token) {
+    throw new Error("UNAUTHORIZED");
   }
-}
 
-// Clears cookies and returns 401
-function logoutResponse() {
-  const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let payload;
+  try {
+    payload = verifyAccessToken(token);
+  } catch {
+    throw new Error("UNAUTHORIZED");
+  }
 
-    response.headers.set('Set-Cookie', clearCookie('access_token'));
-  response.headers.append('Set-Cookie', clearCookie('refresh_token'));
+  await connectDB();
 
-  return response;
-}
+  const user = await User.findById(payload.userId)
 
+  if (!user) {
+    throw new Error("UNAUTHORIZED");
+  }
 
- function clearCookie(name) {
-  return `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict; ${
-    process.env.NODE_ENV === 'production' ? 'Secure;' : ''
-  }`;
+  return {
+    user,
+    userId: user._id.toString(),
+    deviceId: payload.deviceId,
+  };
 }

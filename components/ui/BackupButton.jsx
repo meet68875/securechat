@@ -26,7 +26,6 @@ export default function BackupExport() {
       icon="pi pi-download"
       onClick={exportBackup}
       tooltip="Download all messages as a JSON file"
-      // Use p-button-success and p-button-sm for a smaller, standard utility button
       className="p-button-success p-button-sm" 
       disabled={messages.length === 0}
     />

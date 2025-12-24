@@ -1,50 +1,38 @@
-import { authMiddleware } from '../../middleware';
-import { cacheMessage } from '../../../../../database/models/chatCache';
-import clientPromise from '../../../../../database/mongodb';
+// src/app/api/messages/send/route.js
+import { NextResponse } from "next/server";
+import { requireAuth } from "../../middleware";
+import Conversation from "../../../../../database/Conversation";
+import Messages from "../../../../../database/models/Messages";
 
-export async function POST(request) {
-  const auth = await authMiddleware(request);
 
-  // FIX: convert auth failure into Response
-  if (!auth.ok) {
-    return Response.json({ error: auth.error }, { status: auth.status });
-  }
-
-  const { text } = await request.json();
-  if (!text?.trim()) {
-    return Response.json({ error: 'Message empty' }, { status: 400 });
-  }
-
-  const userId = auth.userId;
-  const deviceId = auth.deviceId;
-
+export async function POST(req) {
   try {
-    const client = await clientPromise;
-    const db = client.db();
+    const { conversationId, encryptedText, iv } = await req.json();
+       const { userId } = await requireAuth(req);
 
-    const result = await db.collection('messages').insertOne({
-      userId,
-      text: text.trim(),
-      sender: userId,
-      deviceId,
-      timestamp: new Date(),
+    await connectDB();
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: userId,
     });
 
-    const savedMessage = {
-  id: result.insertedId?.toString() || uuidv4(), // fallback if undefined
-  userId,
-  text: text.trim(),
-  sender: userId,
-  deviceId,
-  timestamp: new Date(),
-};
+    if (!conversation) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
-    await cacheMessage(userId, savedMessage);
+    const message = await Messages.create({
+      conversationId,
+      senderId: userId,
+      encryptedText,
+      iv,
+    });
 
-    return Response.json({ message: savedMessage });
+    conversation.lastMessage = message._id;
+    await conversation.save();
 
+    return NextResponse.json({ success: true, message });
   } catch (err) {
-    console.error('Send message error:', err);
-    return Response.json({ error: 'Failed to send' }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 401 });
   }
 }

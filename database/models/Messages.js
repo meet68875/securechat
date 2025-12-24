@@ -1,41 +1,28 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const MessageSchema = new mongoose.Schema(
+const messageSchema = new mongoose.Schema(
   {
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
       required: true,
-      index: true,
     },
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
-    recipientId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-    },
-    // 🎯 E2EE CONTENT: Store the encrypted text blob
-    encryptedContent: {
-      type: String, 
-      required: true,
-    },
-   
-    e2eMetadata: { 
-      type: mongoose.Schema.Types.Mixed, 
-      required: true 
-    },
-    
-    status: {
+    encryptedText: {
       type: String,
-      enum: ['sent', 'delivered', 'read'],
-      default: 'sent',
+      required: true,
+    },
+    iv: {
+      type: String,
+      required: true,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-const Message = mongoose.models.Message || mongoose.model('Message', MessageSchema);
-module.exports = Message;
+const Message = mongoose.models.Message || mongoose.model("Message", messageSchema);
+export default Message;

@@ -1,22 +1,19 @@
-// src/lib/mongodb.js
-import { MongoClient } from 'mongodb';
+import mongoose from "mongoose";
 
-let client;
-let clientPromise;
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: "securechat",
+      autoIndex: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+    });
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Add MongoDB URI to .env.local');
-}
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(process.env.MONGODB_URI);
-    global._mongoClientPromise = client.connect();
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+    process.exit(1);
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(process.env.MONGODB_URI);
-  clientPromise = client.connect();
-}
+};
 
-export default clientPromise;
+export default connectDB;

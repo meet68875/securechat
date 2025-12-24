@@ -18,6 +18,7 @@
     "jsonwebtoken": "^9.0.3",
     "libsodium-wrappers": "^0.7.15",
     "mongodb": "^7.0.0",
+    "mongoose": "^9.0.2",
     "next": "^16.0.7",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.7",

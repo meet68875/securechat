@@ -7,11 +7,9 @@ export default function ChatBubble({ message }) {
   const isMe = message.sender === "me";
 
   return (
-    // items-end ensures the avatar stays at the bottom level of the bubble
     <div className={`flex items-end gap-2 my-4 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
       
-      {/* Avatar Section */}
-      <div className="flex-shrink-0 mb-6"> {/* Bottom margin accounts for the timestamp height */}
+      <div className="flex-shrink-0 mb-6">
         <Avatar
           label={isMe ? "M" : "AI"}
           size="large"
