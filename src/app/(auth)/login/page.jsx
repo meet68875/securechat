@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '../../../../store/hooks';
-import { loginSuccess } from '../../../../store/slices/authSlice';
-import { apiClient } from '../../../../lib/apiClient';
-import { generateKeyPair } from '../../../../lib/crypto';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch } from "../../../../store/hooks";
+import { loginSuccess } from "../../../../store/slices/authSlice";
+import { apiClient } from "../../../../lib/apiClient";
+import { generateKeyPair } from "../../../../lib/crypto";
 // 👇 Import the key generator
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -20,48 +20,46 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      // 1️⃣ Check if we already have keys in this browser
       let keys;
       const storedKeys = localStorage.getItem("chat_keys");
 
       if (storedKeys) {
         keys = JSON.parse(storedKeys);
       } else {
-        console.log("⚠️ No keys found. Generating new identity...");
         keys = generateKeyPair();
-        
         localStorage.setItem("chat_keys", JSON.stringify(keys));
       }
 
-      const res = await apiClient('/api/auth/login', {
-        method: 'POST',
-        // 👇 Include publicKey in the payload
-        body: JSON.stringify({ 
-            email, 
-            password, 
-            publicKey: keys.publicKey 
+      const res = await apiClient("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          publicKey: keys.publicKey,
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Invalid credentials');
+        setError(data.error || "Invalid email or password");
         return;
       }
 
-      const data = await res.json();
-      if (data.success) {
-        dispatch(loginSuccess({ user: data.user, token: data.token }));
-        router.push('/chat');
-      } else {
-        setError(data.error || 'Invalid credentials');
-      }
+      dispatch(
+        loginSuccess({
+          user: data.user,
+          token: data.token,
+        })
+      );
+
+      router.push("/chat");
     } catch (err) {
       console.error(err);
-      setError('Network error. Please try again.');
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +73,9 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16 flex items-center justify-center bg-indigo-100 rounded-full">
             <i className="pi pi-lock text-2xl text-indigo-600"></i>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mt-4">Welcome Back</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mt-4">
+            Welcome Back
+          </h1>
           <p className="text-gray-600 mt-1 text-sm">Sign in to your account</p>
         </div>
 
@@ -119,15 +119,18 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition duration-200 disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <a href="/register" className="text-indigo-600 font-medium hover:underline">
+            Don't have an account?{" "}
+            <a
+              href="/register"
+              className="text-indigo-600 font-medium hover:underline"
+            >
               Sign Up
             </a>
           </p>

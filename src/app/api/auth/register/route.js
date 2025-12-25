@@ -6,7 +6,6 @@ import { signAccessToken, signRefreshToken } from "../../../../../database/jwt";
 
 export async function POST(request) {
   try {
-    // 1️⃣ Extract publicKey along with email/password
     const { email, password, publicKey } = await request.json();
 
     if (!email || !password) {

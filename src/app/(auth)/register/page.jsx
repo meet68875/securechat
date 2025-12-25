@@ -46,7 +46,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-cente px-4">
       <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="mx-auto w-16 h-16 flex items-center justify-center bg-indigo-100 rounded-full">
             <i className="pi pi-user-plus text-2xl text-indigo-600"></i>

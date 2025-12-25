@@ -8,33 +8,41 @@ export async function POST(request) {
   try {
     const { email, password, publicKey } = await request.json();
 
-    if (!email || !password) {
-      return setAuthCookies({
-        responseData: { error: "Missing credentials" },
-        status: 400,
-      });
-    }
+   if (!email || !password) {
+  return setAuthCookies({
+    responseData: {
+      success: false,
+      error: "Email and password are required",
+    },
+    status: 400,
+  });
+}
 
     await connectDB();
 
     const user = await User.findOne({ email }).select("+password");
     
     if (!user) {
-      return setAuthCookies({
-        responseData: { error: "Invalid email or password" },
-        status: 401,
-      });
-    }
+  return setAuthCookies({
+    responseData: {
+      success: false,
+      error: "Invalid email or password",
+    },
+    status: 401,
+  });
+}
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {
-      return setAuthCookies({
-        responseData: { error: "Invalid email or password" },
-        status: 401,
-      });
-    }
-
+   if (!isMatch) {
+  return setAuthCookies({
+    responseData: {
+      success: false,
+      error: "Invalid email or password",
+    },
+    status: 401,
+  });
+}
     if (publicKey) {
       user.identityPublicKey = publicKey;
       await user.save();

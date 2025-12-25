@@ -1,6 +1,5 @@
 // src/pages/api/socket.js
 import { Server } from "socket.io";
-// Adjust these paths if your folder structure is different
 import { verifyAccessToken } from "../../../database/jwt";
 import connectDB from "../../../database/mongodb";
 import Conversation from "../../../database/Conversation";
