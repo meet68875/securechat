@@ -9,7 +9,7 @@ export async function POST(req) {
   try {
     const { targetUserId } = await req.json();
    const { userId } = await requireAuth(req);
-
+      console.log("targetUserId,userId",targetUserId,userId)
     await connectDB();
 
     let conversation = await Conversation.findOne({

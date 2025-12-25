@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '../../../../store/hooks';
 import { loginSuccess } from '../../../../store/slices/authSlice';
 import { apiClient } from '../../../../lib/apiClient';
+import { generateKeyPair } from '../../../../lib/crypto';
+// 👇 Import the key generator
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,43 +18,58 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  try {
-    const res = await apiClient('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      // 1️⃣ Check if we already have keys in this browser
+      let keys;
+      const storedKeys = localStorage.getItem("chat_keys");
 
-    if (!res.ok) {
-      // Check for HTTP status code errors
+      if (storedKeys) {
+        keys = JSON.parse(storedKeys);
+      } else {
+        console.log("⚠️ No keys found. Generating new identity...");
+        keys = generateKeyPair();
+        
+        localStorage.setItem("chat_keys", JSON.stringify(keys));
+      }
+
+      const res = await apiClient('/api/auth/login', {
+        method: 'POST',
+        // 👇 Include publicKey in the payload
+        body: JSON.stringify({ 
+            email, 
+            password, 
+            publicKey: keys.publicKey 
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Invalid credentials');
+        return;
+      }
+
       const data = await res.json();
-      setError(data.error || 'Invalid credentials'); // Use the error message from the server
-      return; // Exit if the response isn't OK
+      if (data.success) {
+        dispatch(loginSuccess({ user: data.user, token: data.token }));
+        router.push('/chat');
+      } else {
+        setError(data.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    const data = await res.json();
-    if (data.success) {
-      dispatch(loginSuccess({ user: data.user, token: data.token }));
-      router.push('/chat');
-    } else {
-      setError(data.error || 'Invalid credentials');
-    }
-  } catch (err) {
-    console.error(err);
-    setError('Network error. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
-
         {/* Header */}
         <div className="text-center mb-6">
           <div className="mx-auto w-16 h-16 flex items-center justify-center bg-indigo-100 rounded-full">
@@ -71,16 +88,15 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Email or Username
+              Email
             </label>
             <input
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com or username"
+              placeholder="you@example.com"
               required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg 
-                         shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
             />
           </div>
 
@@ -94,17 +110,14 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg 
-                         shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg 
-                       font-semibold hover:bg-indigo-700 transition duration-200 
-                       disabled:opacity-50"
+            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition duration-200 disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
@@ -118,8 +131,6 @@ export default function LoginPage() {
               Sign Up
             </a>
           </p>
-
-         
         </div>
       </div>
     </div>

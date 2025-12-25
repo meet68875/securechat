@@ -5,11 +5,10 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { Menubar } from 'primereact/menubar';
 import { Dialog } from 'primereact/dialog';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Add this
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
-import { apiClient } from '../../lib/apiClient'; // Ensure you use your client
+import { apiClient } from '../../lib/apiClient';
 import QrLoginModalContent from './QRDisplay';
 
 export default function Navbar() {
@@ -35,23 +34,34 @@ export default function Navbar() {
   const items = [
     {
       label: 'SecureChat',
-      icon: 'pi pi-lock text-indigo-600',
-      className: 'font-bold text-xl',
-      command: () => router.push('/chat') // Make brand clickable
+      icon: 'pi pi-lock text-indigo-600 mr-2',
+      template: (item, options) => (
+        <div 
+          className="flex items-center cursor-pointer px-2" 
+          onClick={() => router.push('/chat')}
+        >
+          <span className={`${item.icon} text-xl`} />
+          <span className="font-bold text-xl tracking-tight text-slate-800">
+            {item.label}
+          </span>
+        </div>
+      )
     },
   ];
 
   const end = isLoggedIn ? (
-    <div className="flex items-center gap-4">
-      <span className="hidden lg:block text-slate-600 font-medium">
-        {user?.email}
-      </span>
+    <div className="flex items-center gap-2 md:gap-4">
+      <div className="hidden sm:flex flex-col items-end mr-2">
+        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Authenticated</span>
+        <span className="text-sm text-slate-500 truncate max-w-[150px]">{user?.email}</span>
+      </div>
       
       <Button 
-        label="Link Device" 
         icon="pi pi-qrcode" 
+        tooltip="Link Device"
+        tooltipOptions={{ position: 'bottom' }}
         onClick={() => setIsQrModalVisible(true)} 
-        className="p-button-text p-button-secondary" 
+        className="p-button-rounded p-button-text p-button-secondary h-10 w-10" 
       />
 
       <Button
@@ -59,36 +69,32 @@ export default function Navbar() {
         icon={isLoggingOut ? "pi pi-spin pi-spinner" : "pi pi-sign-out"}
         onClick={handleLogout}
         disabled={isLoggingOut}
-        className="p-button-danger p-button-outlined p-button-sm"
+        className="p-button-danger p-button-sm px-4 h-10 rounded-lg shadow-sm"
       />
     </div>
-  ) : (
-    <div className="flex gap-3">
-      <Link href="/login">
-        <Button label="Login" icon="pi pi-sign-in" className="p-button-text" />
-      </Link>
-      <Link href="/register">
-        <Button label="Get Started" className="bg-indigo-600 border-none" />
-      </Link>
-    </div>
-  );
+  ) : null;
 
   return (
     <>
-      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <Menubar model={items} end={end} className="border-0 bg-transparent py-2" />
+      <header className="h-16 flex-none bg-white border-b border-slate-200 z-[60] relative">
+        <div className="h-full max-w-[100vw] mx-auto px-4 lg:px-6">
+          <Menubar 
+            model={items} 
+            end={end} 
+            className="h-full border-0 bg-transparent p-0 justify-between" 
+            style={{ borderRadius: 0 }}
+          />
         </div>
-      </div>
+      </header>
 
       <Dialog
         header="Secure Device Linking"
         visible={isQrModalVisible}
-        style={{ width: '90vw', maxWidth: '450px' }}
+        style={{ width: '100%', maxWidth: '500px' }}
         onHide={() => setIsQrModalVisible(false)}
         modal
+        dismissableMask
         draggable={false}
-        resizable={false}
       >
         <QrLoginModalContent onClose={() => setIsQrModalVisible(false)} />
       </Dialog>

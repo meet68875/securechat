@@ -6,7 +6,6 @@ export async function middleware(req) {
 
   console.log('Requested Path:', pathname);
 
-  // 1. AUTHENTICATED ROUTES: Redirect to /login if NO token
   const protectedPaths = ['/chat', '/'];
   if (protectedPaths.some(path => pathname === path || pathname.startsWith('/chat/'))) {
     if (!token) {

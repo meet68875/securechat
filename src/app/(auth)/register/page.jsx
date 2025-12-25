@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '../../../../store/hooks';
-import { loginSuccess } from '../../../../store/slices/authSlice';
-import { apiClient } from '../../../../lib/apiClient';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch } from "../../../../store/hooks";
+import { loginSuccess } from "../../../../store/slices/authSlice";
+import { apiClient } from "../../../../lib/apiClient";
+import { generateKeyPair } from "../../../../lib/crypto";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -18,26 +19,25 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
+    setError("");
+    const keys = generateKeyPair();
+    localStorage.setItem("chat_keys", JSON.stringify(keys));
     try {
-     
- const res = await apiClient('/api/auth/register', {
-    method: 'POST',
- body: JSON.stringify({ email, password }),
-        
-  });
+      const res = await apiClient("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, publicKey: keys.publicKey }),
+      });
       const data = await res.json();
 
       if (res.ok) {
         dispatch(loginSuccess({ user: data.user, token: data.token }));
-        router.push('/chat');
+        router.push("/chat");
       } else {
-        setError(data.error || 'Registration failed');
+        setError(data.error || "Registration failed");
       }
     } catch (err) {
       console.error(err);
-      setError('Network error. Please try again.');
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -46,14 +46,17 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-cente px-4">
       <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
-
         {/* Header */}
         <div className="text-center mb-6">
           <div className="mx-auto w-16 h-16 flex items-center justify-center bg-indigo-100 rounded-full">
             <i className="pi pi-user-plus text-2xl text-indigo-600"></i>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mt-4">Create Account</h1>
-          <p className="text-gray-600 mt-1 text-sm">Join the secure encrypted chat</p>
+          <h1 className="text-2xl font-bold text-gray-800 mt-4">
+            Create Account
+          </h1>
+          <p className="text-gray-600 mt-1 text-sm">
+            Join the secure encrypted chat
+          </p>
         </div>
 
         {/* Error Message */}
@@ -64,7 +67,9 @@ export default function RegisterPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <input
               type="email"
               value={email}
@@ -77,7 +82,9 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -96,20 +103,21 @@ export default function RegisterPage() {
                        font-semibold hover:bg-indigo-700 transition duration-200 
                        disabled:opacity-50"
           >
-            {loading ? 'Creating Account...' : 'Register'}
+            {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/login" className="text-indigo-600 font-medium hover:underline">
+            Already have an account?{" "}
+            <a
+              href="/login"
+              className="text-indigo-600 font-medium hover:underline"
+            >
               Login
             </a>
           </p>
-
-          
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { setAuthCookies } from "../../../../../database/cookies";
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, publicKey } = await request.json();
 
     if (!email || !password) {
       return setAuthCookies({
@@ -18,7 +18,7 @@ export async function POST(request) {
     await connectDB();
 
     const user = await User.findOne({ email }).select("+password");
-    console.log(user)
+    
     if (!user) {
       return setAuthCookies({
         responseData: { error: "Invalid email or password" },
@@ -35,7 +35,11 @@ export async function POST(request) {
       });
     }
 
-    // ✅ Include deviceId later if you want token rotation
+    if (publicKey) {
+      user.identityPublicKey = publicKey;
+      await user.save();
+    }
+
     const accessToken = signAccessToken({
       userId: user._id.toString(),
     });

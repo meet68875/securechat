@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import connectDB from "../../../../../database/mongodb";
 import User from "../../../../../database/models/User";
@@ -7,7 +6,8 @@ import { signAccessToken, signRefreshToken } from "../../../../../database/jwt";
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    // 1️⃣ Extract publicKey along with email/password
+    const { email, password, publicKey } = await request.json();
 
     if (!email || !password) {
       return setAuthCookies({
@@ -26,10 +26,10 @@ export async function POST(request) {
       });
     }
 
-
     const user = await User.create({
       email,
       password: password,
+      identityPublicKey: publicKey || null,
     });
 
     const deviceId = uuidv4();
@@ -50,6 +50,7 @@ export async function POST(request) {
         user: {
           id: user._id.toString(),
           email: user.email,
+          publicKey: user.identityPublicKey,
         },
         deviceId,
       },

@@ -1,15 +1,22 @@
-// src/app/api/messages/[conversationId]/route.js
 import { NextResponse } from "next/server";
 import { requireAuth } from "../../middleware";
 import connectDB from "../../../../../database/mongodb";
 import Conversation from "../../../../../database/Conversation";
 import Messages from "../../../../../database/models/Messages";
-
+import mongoose from "mongoose"; // Import mongoose to validate IDs
 
 export async function GET(req, { params }) {
   try {
     const { userId } = await requireAuth(req);
-    const { conversationId } = params;
+    const resolvedParams = await params;
+    const { conversationId } = resolvedParams;
+    if (!conversationId || conversationId === "null" || conversationId === "undefined") {
+      return NextResponse.json([]);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return NextResponse.json({ error: "Invalid Conversation ID" }, { status: 400 });
+    }
 
     const limit = Number(req.nextUrl.searchParams.get("limit")) || 20;
     const cursor = req.nextUrl.searchParams.get("cursor");
@@ -34,6 +41,7 @@ export async function GET(req, { params }) {
 
     return NextResponse.json(messages.reverse());
   } catch (err) {
+    console.error("GET Messages Error:", err);
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
 }

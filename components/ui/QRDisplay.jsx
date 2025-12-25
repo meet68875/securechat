@@ -5,26 +5,15 @@ import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { QRCodeCanvas } from 'qrcode.react';
 
-/**
- * Renders the content for the QR Login/Setup Modal.
- * This is designed to be displayed AFTER a user has successfully logged in
- * to allow them to set up a new session or companion device via a QR code.
- * @param {object} props
- * @param {() => void} props.onClose - Function to call to close the modal.
- */
-export default function QrLoginModalContent({ onClose }) {
-  // NOTE: In a real app, this value would be a unique, server-generated, 
-  // cryptographically secure token tied to the current session (e.g., JWT).
-  // The mobile app would scan this value to initiate a link request.
-  const secureTokenValue = "SECURECHAT-LINK-TOKEN-USER-ID-12345-EXP-20251206";
-  const isLoading = false; // Simulate loading state for QR code generation
 
+export default function QrLoginModalContent({ onClose }) {
+  const secureTokenValue = "SECURECHAT-LINK-TOKEN-USER-ID-12345-EXP-20251206";
+  const isLoading = false; 
   const header = (
     <div className="text-center p-4 bg-blue-50">
       <i className="pi pi-qrcode text-6xl text-blue-600"></i>
     </div>
   );
-
   return (
     <Card
       title="Set Up QR-Based Login"
@@ -54,9 +43,9 @@ export default function QrLoginModalContent({ onClose }) {
                   includeMargin={false}
                 />
               </div>
-              <p className="mt-3 text-sm text-red-500">
+             {/*  <p className="mt-3 text-sm text-red-500">
                 ⚠️ This QR code is sensitive. Do not share it. It expires in 5 minutes.
-              </p>
+              </p> */}
             </>
           )}
         </div>
