@@ -1,3 +1,5 @@
+// app/api/auth/register/route.js
+
 import { v4 as uuidv4 } from "uuid";
 import connectDB from "../../../../../database/mongodb";
 import User from "../../../../../database/models/User";
@@ -6,7 +8,15 @@ import { signAccessToken, signRefreshToken } from "../../../../../database/jwt";
 
 export async function POST(request) {
   try {
-    const { email, password, publicKey } = await request.json();
+    // 1. Accept new fields
+    const { 
+        email, 
+        password, 
+        publicKey, 
+        encryptedPrivateKey, 
+        keySalt, 
+        keyIv 
+    } = await request.json();
 
     if (!email || !password) {
       return setAuthCookies({
@@ -25,10 +35,14 @@ export async function POST(request) {
       });
     }
 
+    // 2. Save Encrypted Key Blob to DB
     const user = await User.create({
       email,
       password: password,
       identityPublicKey: publicKey || null,
+      encryptedPrivateKey: encryptedPrivateKey || null,
+      keySalt: keySalt || null,
+      keyIv: keyIv || null
     });
 
     const deviceId = uuidv4();
@@ -50,6 +64,7 @@ export async function POST(request) {
           id: user._id.toString(),
           email: user.email,
           publicKey: user.identityPublicKey,
+          // We don't need to return the private key here; the client already has it in memory
         },
         deviceId,
       },

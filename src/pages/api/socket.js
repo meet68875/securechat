@@ -2,7 +2,7 @@
 import { Server } from "socket.io";
 import { verifyAccessToken } from "../../../database/jwt";
 import connectDB from "../../../database/mongodb";
-import Conversation from "../../../database/Conversation";
+import Conversation from "../../../database/models/Conversation";
 import Message from "../../../database/models/Messages";
 
 export default async function handler(req, res) {

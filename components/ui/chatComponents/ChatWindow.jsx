@@ -23,7 +23,6 @@ export default function ChatWindow({ socket, conversation, currentUser }) {
         .then(setMessages)
         .catch((err) => console.error("Failed to load messages:", err));
 
-      // B. Fetch Recipient Key (with no-store to avoid stale keys)
       if (conversation.userId) {
         fetch(`/api/keys/${conversation.userId}`, {
           cache: "no-store",
@@ -36,7 +35,6 @@ export default function ChatWindow({ socket, conversation, currentUser }) {
       }
     } else {
       setMessages([]);
-      // Even if no conversation ID yet, fetch key if user exists
       if (conversation.userId) {
         fetch(`/api/keys/${conversation.userId}`, {
           cache: "no-store",
@@ -47,6 +45,7 @@ export default function ChatWindow({ socket, conversation, currentUser }) {
           });
       }
     }
+   
   }, [conversation?.conversationId, conversation?.userId, socket]);
 
   // 2. Real-time Listener

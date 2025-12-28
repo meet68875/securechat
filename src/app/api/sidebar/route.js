@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { verifyAccessToken } from "../../../../database/jwt"; // Verify this path
 import connectDB from "../../../../database/mongodb";
 import User from "../../../../database/models/User";
-import Conversation from "../../../../database/Conversation";
+import Conversation from "../../../../database/models/Conversation";
 import mongoose from "mongoose";
 
 export async function GET(req) {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch } from "../../../../store/hooks";
 import { loginSuccess } from "../../../../store/slices/authSlice";
 import { apiClient } from "../../../../lib/apiClient";
-import { generateKeyPair } from "../../../../lib/crypto";
+import { decryptPrivateKey, encryptPrivateKey, generateKeyPair } from "../../../../lib/crypto";
 // 👇 Import the key generator
 
 export default function LoginPage() {
@@ -13,57 +13,101 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      let keys;
-      const storedKeys = localStorage.getItem("chat_keys");
-
-      if (storedKeys) {
-        keys = JSON.parse(storedKeys);
-      } else {
-        keys = generateKeyPair();
-        localStorage.setItem("chat_keys", JSON.stringify(keys));
-      }
-
+      // ---------------------------------------------------------
+      // STEP 1: LOGIN (Don't generate keys yet!)
+      // ---------------------------------------------------------
+      // We send JUST email/password first. We don't know if we need new keys yet.
       const res = await apiClient("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          publicKey: keys.publicKey,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Invalid email or password");
+        setError(data.error || "Login failed");
+        setLoading(false);
         return;
       }
 
-      dispatch(
-        loginSuccess({
-          user: data.user,
-          token: data.token,
-        })
-      );
+      // ---------------------------------------------------------
+      // STEP 2: HANDLE KEYS (Restore or Generate)
+      // ---------------------------------------------------------
+      let finalKeys = null;
 
+      // CASE A: Server sent us a backup key (This fixes the Incognito issue!)
+      if (data.user.encryptedPrivateKey && data.user.keySalt && data.user.keyIv) {
+          console.log("🔐 Found backup on server. Restoring...");
+          
+          try {
+              const secretKey = await decryptPrivateKey(
+                  data.user.encryptedPrivateKey,
+                  password, // Use the password user just typed
+                  data.user.keySalt,
+                  data.user.keyIv
+              );
+              
+              if (!secretKey) throw new Error("Decryption returned null");
+
+              finalKeys = {
+                  publicKey: data.user.identityPublicKey,
+                  secretKey: secretKey
+              };
+          } catch (decryptionErr) {
+              console.error("Decryption failed:", decryptionErr);
+              // Fallback: If password changed or data corrupted, we might HAVE to reset.
+              // For now, let's just alert.
+              setError("Could not restore encryption keys. Wrong password?");
+              setLoading(false);
+              return;
+          }
+      } 
+      
+      // CASE B: No backup on server (First time user or legacy user)
+      else {
+          console.log("🆕 No backup found. Generating NEW keys...");
+          finalKeys = generateKeyPair();
+
+          // We must upload this new key immediately so it doesn't happen again
+          const encryptedData = await encryptPrivateKey(finalKeys.secretKey, password);
+          
+          // Background upload (don't await strictly if you want speed, but safer to await)
+          await apiClient("/api/keys/upload", {
+              method: "POST",
+              body: JSON.stringify({
+                  publicKey: finalKeys.publicKey,
+                  encryptedPrivateKey: encryptedData.encryptedPrivateKey,
+                  keySalt: encryptedData.keySalt,
+                  keyIv: encryptedData.keyIv
+              })
+          });
+      }
+
+      // ---------------------------------------------------------
+      // STEP 3: SAVE TO BROWSER & REDIRECT
+      // ---------------------------------------------------------
+      localStorage.setItem("chat_keys", JSON.stringify(finalKeys));
+
+      dispatch(loginSuccess({ user: data.user, token: data.token }));
       router.push("/chat");
+
     } catch (err) {
       console.error(err);
-      setError("Something went wrong. Please try again.");
+      setError("Login error");
     } finally {
       setLoading(false);
     }
-  };
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -104,14 +148,30 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
-            />
+
+            <div className="relative mt-1">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg shadow-sm
+                 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+              />
+
+              {/* Eye Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <i
+                  className={`pi ${showPassword ? "pi-eye" : "pi-eye-slash"}`}
+                ></i>
+              </button>
+            </div>
           </div>
 
           <button

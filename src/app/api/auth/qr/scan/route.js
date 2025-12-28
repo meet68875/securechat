@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import QrSession from "../../../../../../database/models/QrSession";
 import connectDB from "../../../../../../database/mongodb";
-import Conversation from "../../../../../../database/Conversation";
+import Conversation from "../../../../../../database/models/Conversation";
 import Message from "../../../../../../database/models/Messages";
 
 

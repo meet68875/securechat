@@ -1,7 +1,7 @@
 // src/app/api/conversations/route.js
 import { NextResponse } from "next/server";
 import connectDB from "../../../../database/mongodb";
-import Conversation from "../../../../database/Conversation";
+import Conversation from "../../../../database/models/Conversation";
 import { requireAuth } from "../middleware";
 
 

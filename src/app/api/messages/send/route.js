@@ -1,7 +1,7 @@
 // src/app/api/messages/send/route.js
 import { NextResponse } from "next/server";
 import { requireAuth } from "../../middleware";
-import Conversation from "../../../../../database/Conversation";
+import Conversation from "../../../../../database/models/Conversation";
 import Messages from "../../../../../database/models/Messages";
 
 

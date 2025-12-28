@@ -1,29 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { encryptMessage, decryptMessage } from "../../../lib/crypto"; 
+import { encryptMessage, decryptMessage } from "../../../lib/crypto";
 
-export default function MessageInput({ 
-  socket, 
-  conversationId, 
-  recipientId, 
+export default function MessageInput({
+  socket,
+  conversationId,
+  recipientId,
   messages,
   recipientPublicKey,
-  currentUser,  // 👈 New Prop
-  recipientName // 👈 New Prop
+  currentUser,   // object { id, username, ... }
+  recipientName  // string "Alice"
 }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // --- 1. SEND MESSAGE LOGIC (Standard) ---
   const sendMessage = async () => {
     if (!text.trim() || loading) return;
     setLoading(true);
 
     try {
+      // Fetch fresh key to avoid stale data
       const res = await fetch(`/api/keys/${recipientId}`, { cache: 'no-store' });
       const data = await res.json();
-      
+
       if (!data.publicKey) {
         alert("User has no public key!");
         setLoading(false);
@@ -47,48 +49,73 @@ export default function MessageInput({
     }
   };
 
-  // 👇 UPDATED DOWNLOAD LOGIC
+  // --- 2. DOWNLOAD LOGIC (Customized for Names & Timezone) ---
   const handleDownloadChat = () => {
     if (!messages || messages.length === 0) return;
     setIsDownloading(true);
 
     try {
+      // Map messages to the clean format you requested
       const exportData = messages.map((msg) => {
-        let decryptedContent = "[Encrypted]";
+        
+        // A. Resolve the Name
+        const isMe = msg.senderId === currentUser?.id;
+        const senderName = isMe 
+          ? (currentUser?.username || "Me") 
+          : (recipientName || "Recipient");
 
-        // 1. Decryption Logic
+        // B. Decrypt the Content
+        let content = "[Encrypted]";
+        
         if (msg.text && !msg.encryptedText) {
-          decryptedContent = msg.text;
+          // System message or plain text
+          content = msg.text;
         } else if (recipientPublicKey && msg.encryptedText && msg.iv) {
-          const result = decryptMessage(msg.encryptedText, msg.iv, recipientPublicKey);
-          if (!result || result.startsWith("Error") || result.startsWith("⚠️")) {
-             decryptedContent = "⛔ [Unavailable - Old Key]";
-          } else {
-             decryptedContent = result;
+          try {
+            // Decrypt using the stored public key logic
+            const result = decryptMessage(msg.encryptedText, msg.iv, recipientPublicKey);
+            if (result && !result.startsWith("Error")) {
+              content = result;
+            } else {
+              content = "⚠️ [Decryption Failed]";
+            }
+          } catch (e) {
+            content = "⚠️ [Error]";
           }
         }
 
-        // 2. Determine Sender Name
-        // If the ID matches mine, use my name (or "Me"). Otherwise, use their name.
-        const senderName = (msg.senderId === currentUser?.id) 
-            ? (currentUser?.username || "Me") 
-            : recipientName;
+        // C. Format Time with TimeZone
+        // Example: "12/28/2025, 6:30:00 PM GMT+5:30"
+        const timeWithZone = new Date(msg.createdAt).toLocaleString(undefined, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short' // This adds 'IST', 'EST', or 'GMT+5:30'
+        });
 
-        // 3. Return Clean "Normal" Format
+        // D. Return the Clean Object
         return {
           Sender: senderName,
-          Message: decryptedContent,
-          Time: new Date(msg.createdAt).toLocaleString(), // e.g. "12/25/2025, 10:30:00 AM"
+          Message: content,
+          Time: timeWithZone
         };
       });
 
+      // Create the file
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
+      
       const link = document.createElement("a");
       link.href = url;
-      // Clean filename: "chat_Alice_TIMESTAMP.json"
-      link.download = `chat_${recipientName.replace(/\s+/g, '_')}_${Date.now()}.json`;
+      
+      // Filename: "chat_Alice_2025-12-28.json"
+      const safeName = (recipientName || "chat").replace(/[^a-z0-9]/gi, '_');
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `chat_${safeName}_${dateStr}.json`;
       
       document.body.appendChild(link);
       link.click();
@@ -97,14 +124,14 @@ export default function MessageInput({
 
     } catch (err) {
       console.error("Download failed:", err);
-      alert("Could not export chat");
+      alert("Failed to export chat history");
     } finally {
       setIsDownloading(false);
     }
   };
 
   return (
-    <div className="p-4 border-t flex bg-white gap-2">
+    <div className="p-4 border-t flex bg-white gap-2 items-center">
       <input
         className="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={text}
@@ -117,16 +144,17 @@ export default function MessageInput({
       <button 
         onClick={sendMessage} 
         disabled={loading}
-        className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
       >
-        Send
+        {loading ? "Sending..." : "Send"}
       </button>
 
+      {/* Download Button */}
       <button
         onClick={handleDownloadChat}
         disabled={isDownloading || !messages || messages.length === 0}
-        title="Download Chat History"
-        className="px-3 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded hover:bg-gray-200 transition disabled:opacity-50"
+        title="Download Chat JSON"
+        className="px-3 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded hover:bg-gray-200 transition disabled:opacity-50 flex items-center justify-center min-w-[44px]"
       >
         {isDownloading ? (
           <span className="block w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>

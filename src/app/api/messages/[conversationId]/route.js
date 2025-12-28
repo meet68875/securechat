@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "../../middleware";
 import connectDB from "../../../../../database/mongodb";
-import Conversation from "../../../../../database/Conversation";
+import Conversation from "../../../../../database/models/Conversation";
 import Messages from "../../../../../database/models/Messages";
 import mongoose from "mongoose"; // Import mongoose to validate IDs
 

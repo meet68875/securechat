@@ -2,24 +2,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const PreKeySchema = new mongoose.Schema(
-  {
-    keyId: {
-      type: Number,
-      required: true,
-    },
-    publicKey: {
-      type: String,
-      required: true,
-    },
-    usedAt: {
-      type: Date,
-      default: null, // helps prevent reuse
-    },
-  },
-  { _id: false }
-);
-
 const UserSchema = new mongoose.Schema(
   {
     email: {
@@ -34,7 +16,7 @@ const UserSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      select: false, // 🔐 never return by default
+      select: false, 
     },
 
     username: {
@@ -49,19 +31,22 @@ const UserSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // 🔐 E2EE — identity key (public only)
     identityPublicKey: {
       type: String,
       default: null,
     },
 
-    // 🔐 E2EE — one-time prekeys
-    preKeys: [PreKeySchema],
-
     isActive: {
       type: Boolean,
       default: true,
     },
+
+    encryptedPrivateKey: { 
+      type: String, 
+      select: false // Security: Only fetch when explicitly asked
+    },
+    keySalt: { type: String, select: false },
+    keyIv: { type: String, select: false },
 
     lastSeen: {
       type: Date,

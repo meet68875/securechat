@@ -14,20 +14,14 @@ export default function AuthGuard({ children }) {
   
   // Use a state variable to track if redirection has already been initiated.
   const [isRedirecting, setIsRedirecting] = useState(false);
-    console.log("isLoggedIn",isLoggedIn)
   useEffect(() => {
-    // 1. Skip if still hydrating the state
     if (isLoading) {
       return; 
     }
     
     if (!isLoggedIn && !isRedirecting) {
-      console.log("Access denied. Initiating client-side redirect.");
-      
       setIsRedirecting(true); 
-      
       router.replace('/login'); 
-      
       return;
     }
     
